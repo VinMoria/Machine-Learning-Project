@@ -1,12 +1,19 @@
 # 导入必要的库
+import subprocess
+import sys
+
+subprocess.check_call([sys.executable, "-m", "pip", "install", "tensorflow"])
+!pip install tensorflow scikit-learn
+!pip install scikit-learn
+
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.wrappers.scikit_learn import KerasClassifier
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.base import BaseEstimator, ClassifierMixin
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 # 加载数据
 iris = load_iris()
