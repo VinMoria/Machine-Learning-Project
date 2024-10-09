@@ -1,66 +1,76 @@
-# 用于神经网络模型
-import tensorflow as tf
+import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
-
-# 用于数据集加载和处理
-from sklearn.datasets import load_iris  # 示例数据集
-from sklearn.model_selection import train_test_split, GridSearchCV  # 数据拆分和调参
-from sklearn.preprocessing import StandardScaler, LabelEncoder  # 数据标准化和标签编码
-
-# 其他有用库
-import numpy as np  # 数组处理
-
-
-# 加载数据
-iris = load_iris()
-X = iris.data
-Y = iris.target
-
-# 编码标签
-encoder = LabelEncoder()
-Y_encoded = encoder.fit_transform(Y)
-
-# 标准化数据（对神经网络的训练有帮助）
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# 将数据集拆分为训练集和测试集
-X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y_encoded, test_size=0.2, random_state=42)
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.utils import to_categorical
+from sklearn.base import BaseEstimator, ClassifierMixin
 
 # 定义模型创建函数
-def create_model(optimizer='adam', init='glorot_uniform'):
+def create_model(learning_rate=0.01, neurons=64):
     model = Sequential()
-    model.add(Dense(8, input_dim=4, kernel_initializer=init, activation='relu'))  # 输入层和第一隐藏层
-    model.add(Dense(4, kernel_initializer=init, activation='relu'))  # 第二隐藏层
-    model.add(Dense(3, kernel_initializer=init, activation='softmax'))  # 输出层
-    model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    model.add(Dense(neurons, input_dim=4, activation='relu'))  # 输入层
+    model.add(Dense(3, activation='softmax'))  # 输出层
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
 
-# 包装Keras模型，使其可以与sklearn的GridSearchCV一起使用
-model = KerasClassifier(build_fn=create_model, verbose=0)
+# 自定义 KerasClassifier
+class MyKerasClassifier(BaseEstimator, ClassifierMixin):
+    def __init__(self, build_fn=create_model, epochs=10, batch_size=32, learning_rate=0.01, neurons=64, verbose=0):
+        self.build_fn = build_fn
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.neurons = neurons
+        self.verbose = verbose
+        self.model_ = None
+
+    def fit(self, X, y):
+        self.model_ = self.build_fn(learning_rate=self.learning_rate, neurons=self.neurons)
+        self.model_.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose)
+        return self
+
+    def predict(self, X):
+        return np.argmax(self.model_.predict(X), axis=1)
+
+    def score(self, X, y):
+        loss, accuracy = self.model_.evaluate(X, y, verbose=self.verbose)
+        return accuracy
+
+# 加载数据集
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+# 进行标签编码和 one-hot 编码
+encoder = LabelEncoder()
+y = encoder.fit_transform(y)
+y = to_categorical(y)  # 转换为 one-hot 编码
+
+# 划分训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 创建 KerasClassifier 实例
+model = MyKerasClassifier()
 
 # 定义超参数网格
 param_grid = {
-    'batch_size': [10, 20, 40],         # 批大小
-    'epochs': [10, 50],                 # 训练轮次
-    'optimizer': ['SGD', 'Adam'],       # 优化器
-    'init': ['glorot_uniform', 'normal']  # 权重初始化方法
+    'epochs': [50, 100],
+    'batch_size': [5, 10],
+    'learning_rate': [0.01, 0.001],
+    'neurons': [32, 64]
 }
 
-# 使用GridSearchCV进行超参数搜索
-grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=-1, cv=3)
-
-# 训练模型并搜索最佳参数组合
-grid_result = grid.fit(X_train, Y_train)
+# 进行超参数搜索
+grid = GridSearchCV(estimator=model, param_grid=param_grid, scoring='accuracy', n_jobs=-1, cv=3)
+grid_result = grid.fit(X_train, y_train)
 
 # 输出最佳参数和最佳得分
-print(f"Best Accuracy: {grid_result.best_score_:.4f} using {grid_result.best_params_}")
+print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
 
-# 输出每个参数组合的评估结果 
-means = grid_result.cv_results_['mean_test_score'] stds = grid_result.cv_results_['std_test_score'] params = grid_result.cv_results_['params'] for mean, std, param in zip(means, stds, params): 
-    print(f"Mean Accuracy: {mean:.4f} (std: {std:.4f}) with: {param}") 
+# 评估最佳模型
+best_model = grid_result.best_estimator_
+test_accuracy = best_model.score(X_test, y_test)
 
-# 在测试集上评估模型的性能 
-best_model = grid_result.best_estimator_ 
-test_accuracy = best_model.score(X_test, Y_test) print(f"Test Accuracy: {test_accuracy:.4f}")
+print(f"Best model test accuracy: {test_accuracy}")
