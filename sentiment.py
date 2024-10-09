@@ -13,7 +13,7 @@ def get_stock_sentiment(stock_code, start_date, end_date, url_sentiment="https:/
     print(f"stock code: {stock_code} , company name：{company_name}")
     symbs = company_name
     #TODO date转为参数
-    current_date = datetime.now().date()
+    # current_date = datetime.now().date()
     url_sentiments = [url_sentiment.format(symbs, start_date, end_date)]
 
     r = requests.get(url_sentiments[0])
@@ -23,7 +23,8 @@ def get_stock_sentiment(stock_code, start_date, end_date, url_sentiment="https:/
     for index, each in enumerate(data): 
         each_title =each.text.strip() 
         titles.append(each_title)
-        full_text = ' '.join(titles)
+    
+    full_text = '. '.join(titles)
 
     # nltk.download('punkt')
     # nltk.download('wordnet')
@@ -52,4 +53,4 @@ def get_stock_sentiment(stock_code, start_date, end_date, url_sentiment="https:/
     # print(f"compound_score = {compound_score}")
     return compound_score
     
-print(get_stock_sentiment("AAPL", "2024-05-01", "2024-06-01"))
+print(get_stock_sentiment("AAPL", "2024-03-01", "2024-06-01"))
