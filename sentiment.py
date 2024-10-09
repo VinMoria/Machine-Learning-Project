@@ -37,7 +37,7 @@ def get_stock_sentiment(stock_code, start_date, end_date, url_sentiment="https:/
     # colors = ['#A6B1B5', '#B7D9B5', '#D0C2D5', '#E7D9B2']
     # bars = plt.bar(labels, values, color=colors)
 
-    # # 在每个柱子上显示数据值
+    # # 在每个柱子上显示数据值?
     # for bar in bars:
     #     yval = bar.get_height()  # 获取柱子的高度
     #     plt.text(bar.get_x() + bar.get_width()/2, yval, f'{yval:.3f}', 
