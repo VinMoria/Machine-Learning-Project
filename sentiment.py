@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 def get_stock_sentiment(stock_code, start_date, end_date, url_sentiment="https://www.ft.com/search?expandRefinements=true&q={}&dateFrom={}&dateTo={}"):
     stock_info = yf.Ticker(stock_code)
     company_name = stock_info.info['longName']
-    print(f"stock code: {stock_code} , company name：{company_name}")
+    # print(f"stock code: {stock_code} , company name：{company_name}")
     symbs = company_name
     #TODO date转为参数
     # current_date = datetime.now().date()
@@ -53,4 +53,4 @@ def get_stock_sentiment(stock_code, start_date, end_date, url_sentiment="https:/
     # print(f"compound_score = {compound_score}")
     return compound_score
     
-print(get_stock_sentiment("AAPL", "2024-03-01", "2024-06-01"))
+# print(get_stock_sentiment("AAPL", "2024-03-01", "2024-06-01"))
