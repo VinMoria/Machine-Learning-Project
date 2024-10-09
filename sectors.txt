@@ -1,0 +1,1 @@
+['Healthcare', 'Basic Materials', 'Financial', 'Consumer Defensive','Industrials', 'Technology', 'Consumer Cyclical', 'Real Estate','Communication Services', 'Energy', 'Utilities']
