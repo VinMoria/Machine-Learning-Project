@@ -2,6 +2,9 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import Ridge
 from sklearn.linear_model import Lasso
 
+#get data
+
+
 #feature normalization
 scaler = MinMaxScaler()
 X_train, X_test, y_train, y_test = train_test_split(X_crime, y_crime,
@@ -40,3 +43,17 @@ for alpha in [0.5, 1, 2, 3, 5, 10, 20, 50]:
     r2_test = linlasso.score(X_test_scaled, y_test)
     print('Alpha = {:.2f}\nFeatures kept: {}, r-squared training: {:.2f}, \
 r-squared test: {:.2f}\n')
+    
+    
+
+#train elastic model
+#find best alpha and lambda
+
+
+
+
+#compare three model
+
+
+
+#return the best model
