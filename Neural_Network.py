@@ -38,10 +38,12 @@ class MyKerasClassifier(BaseEstimator, ClassifierMixin):
         loss, accuracy = self.model_.evaluate(X, y, verbose=self.verbose)
         return accuracy
 
-# 加载数据集
-iris = load_iris()
-X = iris.data
-y = iris.target
+# 读取 CSV 文件
+data = pd.read_csv('your_file.csv')
+
+# 假设特征数据位于前几列，目标列是最后一列
+X = data.iloc[:, :-1].values  # 特征列
+y = data.iloc[:, -1].values   # 目标列
 
 # 进行标签编码和 one-hot 编码
 encoder = LabelEncoder()
