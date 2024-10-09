@@ -13,7 +13,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_crime, y_crime,
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-#train Ridge model
+#train Ridge model with normalized feature
 linridge = Ridge(alpha=20.0).fit(X_train_scaled, y_train)
 #find best alpha for ridge
 print('Ridge regression: effect of alpha regularization parameter\n')
