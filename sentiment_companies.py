@@ -4,10 +4,8 @@ import os
 
 def read_companies(sector):
     sector_csv = pd.read_csv(f"train_set/{sector}.csv")
-    sector_csv = sector_csv.head(5)
     quarter_company = sector_csv[['Quarter', 'Ticker']]
     
-
     results_list = []
 
     for index, row in quarter_company.iterrows():
@@ -38,4 +36,4 @@ def read_companies(sector):
     
     return sector_csv
 
-print(read_companies('Basic Materials'))
+# print(read_companies('Secotor')),运行的时候只需要把引号中间改成对应的sector名称,如print(read_companies('Basic Materials'))
