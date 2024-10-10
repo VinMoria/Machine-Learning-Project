@@ -14,6 +14,7 @@ from sklearn.svm import SVR
 import pandas as pd
 import pickle
 import os
+import json
 
 
 FILEPATH = "train_set/"
@@ -91,5 +92,38 @@ def train_SVM_for_sector(Sector):
 		pickle.dump(best_model, f)
 	print(f"save file: {saved_filename}")
 
-#train_SVM_for_sector("Financial")
+	res_dict = {
+		"Sector": Sector,
+		"Features": top_features,
+		"RMSE": test_rmse 
+	}
+	return res_dict
+# ==================  main start  ==================
+# 清空XGBoost_model下的文件
+folder_path = "SVM_model"
+for filename in os.listdir(folder_path):
+	file_path = os.path.join(folder_path, filename)
+	if os.path.isfile(file_path):
+		os.remove(file_path)
+print("old models deleted")
 
+sector_list = [
+	"Healthcare",
+	"Basic Materials",
+	"Financial",
+	"Consumer Defensive","Industrials",
+	"Technology",
+	"Consumer Cyclical",
+	"Real Estate",
+	"Communication Services",
+	"Energy",
+	"Utilities",
+]
+
+res_dict_list = []
+for sector in sector_list:
+	print(f"=============== {sector} start ===============")
+	res_dict_list.append(train_SVM_for_sector(sector))
+
+with open(f'SVM_model/res.json', 'w') as f:
+    json.dump(res_dict_list, f, indent=4)
