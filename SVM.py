@@ -10,6 +10,7 @@ from datetime import datetime
 from sklearn.model_selection import cross_val_score
 from sklearn.impute import SimpleImputer
 from sklearn import linear_model
+from sklearn.svm import SVR
 import pandas as pd
 import pickle
 import os
@@ -20,7 +21,7 @@ FEATURE_PATH = "importance/"
 FEATURE_SELECT_TOP = 20
 
 #get data
-def train_Lasso_for_sector(Sector):
+def train_SVM_for_sector(Sector):
 	# 假设 X 是特征矩阵，y 是目标变量
 	df = pd.read_csv(FILEPATH + Sector + ".csv")
 	# log 方法
@@ -38,37 +39,46 @@ def train_Lasso_for_sector(Sector):
 # 划分训练集和测试集
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+	# 创建管道，使用 SVM
 	pipeline = Pipeline([
         ('imputer', KNNImputer()),
         ('scaler', StandardScaler()),
-        ('lasso', linear_model.Lasso(solver='saga',max_iter=20000, random_state=42))  # 使用 Lasso 回归
+        ('svm', SVR())  # 使用支持向量回归模型
     ])
 
-    # 定义参数网格，包括 KNNImputer 和 Lasso 的超参数
+    # 定义参数网格，包括 KNNImputer 和 SVM 的超参数
 	param_grid = {
-        'imputer__n_neighbors': [3, 5, 7, 10],  # KNN 的邻居数量
-        'lasso__alpha': np.logspace(-3, 3, 10)  # Lasso 的 alpha 范围
+        'imputer__n_neighbors': [3, 5, 7, 10],
+        'svm__C': np.logspace(-3, 3, 7),  # 惩罚参数 C 的范围
+        'svm__epsilon': np.linspace(0, 1, 10),  # Epsilon 的范围
+        'svm__kernel': ['linear', 'poly', 'rbf', 'sigmoid']
     }
 
+	rmse_scorer = make_scorer(lambda y_true, y_pred: np.sqrt(mean_squared_error(y_true, y_pred)), greater_is_better=False)
 
-# 使用GridSearchCV进行超参数搜索，使用neg_mean_squared_error作为评分标准
+# 在 GridSearchCV 中使用自定义 RMSE 评分函数
 	grid_search = GridSearchCV(
     pipeline,
     param_grid,
-    scoring=make_scorer(mean_squared_error, greater_is_better=False),  # 使用MSE作为评分标准
-    cv=5  # 5折交叉验证
+    scoring=rmse_scorer,  # 使用 RMSE 作为评分标准
+    cv=5, # 5折交叉验证
+    verbose=2
 )
 	grid_search.fit(X_train, y_train)
 
-# 获取最优的n_neighbors、alpha和l1_ratio
+    # 输出最优参数
 	best_n_neighbors = grid_search.best_params_['imputer__n_neighbors']
-	best_alpha = grid_search.best_params_['lasso__alpha']
-	
+	best_C = grid_search.best_params_['svm__C']
+	best_epsilon = grid_search.best_params_['svm__epsilon']
+	best_kernel = grid_search.best_params_['svm__kernel']
+ 
 	print(f'Best n_neighbors: {best_n_neighbors}')
-	print(f'Best alpha: {best_alpha}')
+	print(f'Best C: {best_C}')
+	print(f'Best epsilon: {best_epsilon}')
+	print(f'Best kernel: {best_kernel}')
+ 
 
-
-# 使用最优参数重新训练模型，并在测试集上评估
+    # 使用最优参数重新训练模型并评估
 	best_model = grid_search.best_estimator_
 	y_test_pred = best_model.predict(X_test)
 	test_mse = mean_squared_error(y_test, y_test_pred)
@@ -76,6 +86,10 @@ def train_Lasso_for_sector(Sector):
 
 	print(f'Test MSE: {test_mse:.4f}')
 	print(f'Test RMSE: {test_rmse:.4f}')
- 
+	saved_filename = f"{Sector}_{datetime.now().strftime('%m%d%H%M')}.ml"
+	with open(f"SVM_model/{saved_filename}", "wb") as f:
+		pickle.dump(best_model, f)
+	print(f"save file: {saved_filename}")
 
-train_Lasso_for_sector("Utilities")
+#train_SVM_for_sector("Financial")
+
