@@ -14,8 +14,6 @@ TRAIN_SET_PATH = "train_set/"
 FEATURE_PATH = "importance/"
 FEATURE_SELECT_TOP = 20
 
-# TODO Features select
-
 # def clean_outlier(df):
 #	 print(df.shape)
 #	 # 计算 Q1 和 Q3
