@@ -7,8 +7,14 @@ from datetime import datetime
 from sklearn.model_selection import GridSearchCV
 import os
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+import json
 
-FILEPATH = "train_set/"
+TRAIN_SET_PATH = "train_set/"
+FEATURE_PATH = "importance/"
+FEATURE_SELECT_TOP = 20
+
+# TODO Features select
 
 # def clean_outlier(df):
 #	 print(df.shape)
@@ -31,14 +37,24 @@ FILEPATH = "train_set/"
 
 def train_XGBoost_for_sector(Sector):
 	# 假设 X 是特征矩阵，y 是目标变量
-	df = pd.read_csv(FILEPATH + Sector + ".csv")
+	df = pd.read_csv(TRAIN_SET_PATH + Sector + ".csv")
+
 	# log 方法
 	df["Market Cap(M)"] = np.log(df["Market Cap(M)"].replace(0, np.nan))
-	# clean outlier 处理
-	# df = clean_outlier(df)
-	# print(list(df.dtypes))
 	y = df["Market Cap(M)"]
-	X = df.drop(columns=["Market Cap(M)", "Quarter", "Ticker"])
+
+	# 读取选取的特征值
+	df_features = pd.read_csv(FEATURE_PATH + Sector + "_feature_importance.csv")
+	df_features.columns.values[0] = 'Feature'
+	top_features = list(df_features.sort_values(by='Importance', ascending=False).head(FEATURE_SELECT_TOP)["Feature"])
+
+	X = df[top_features]
+	print(X.shape)
+
+	# Normalize
+	# scaler = MinMaxScaler()
+	# X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+	# print(list(X.iloc[0]))
 
 	# 分割数据集为训练集和测试集
 	X_train, X_test, y_train, y_test = train_test_split(
@@ -59,7 +75,7 @@ def train_XGBoost_for_sector(Sector):
 
 	# 使用 GridSearchCV 进行参数搜索
 	grid_search = GridSearchCV(
-		model, param_grid, scoring="neg_mean_squared_error", cv=5, verbose=2
+		model, param_grid, scoring="neg_mean_squared_error", cv=5, verbose=1
 	)
 	grid_search.fit(X_train, y_train)
 
@@ -82,7 +98,16 @@ def train_XGBoost_for_sector(Sector):
 		pickle.dump(best_model, f)
 	print(f"save file: {saved_filename}")
 
+	res_dict = {
+		"Sector": Sector,
+		"Features": top_features,
+		"RMSE": rmse
+	}
+	return res_dict
 
+
+
+# ==================  main start  ==================
 # 清空XGBoost_model下的文件
 folder_path = "XGBoost_model"
 for filename in os.listdir(folder_path):
@@ -90,7 +115,6 @@ for filename in os.listdir(folder_path):
 	if os.path.isfile(file_path):
 		os.remove(file_path)
 print("old models deleted")
-
 
 sector_list = [
 	"Healthcare",
@@ -105,7 +129,10 @@ sector_list = [
 	"Utilities",
 ]
 
-# for sector in sector_list:
-# 	train_XGBoost_for_sector(sector)
+res_dict_list = []
+for sector in sector_list:
+	print(f"=============== {sector} start ===============")
+	res_dict_list.append(train_XGBoost_for_sector(sector))
 
-train_XGBoost_for_sector("Utilities")
+with open(f'XGBoost_model/res.json', 'w') as f:
+    json.dump(res_dict_list, f, indent=4)
