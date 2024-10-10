@@ -11,6 +11,9 @@ import numpy as np
 import os
 
 FILEPATH = "train_set/"
+FEATURE_PATH = "importance/"
+FEATURE_SELECT_TOP = 20
+
 #get data
 def train_Ridge_for_sector(Sector):
 	# 假设 X 是特征矩阵，y 是目标变量
@@ -18,7 +21,12 @@ def train_Ridge_for_sector(Sector):
 	# log 方法
 	df["Market Cap(M)"] = np.log(df["Market Cap(M)"].replace(0, np.nan))
 	y = df["Market Cap(M)"]
-	X = df.drop(columns=["Market Cap(M)", "Quarter", "Ticker"])
+ 
+	df_features = pd.read_csv(FEATURE_PATH + Sector + "_feature_importance.csv")
+	df_features.columns.values[0] = 'Feature'
+	top_features = list(df_features.sort_values(by='Importance', ascending=False).head(FEATURE_SELECT_TOP)["Feature"])
+
+	X = df[top_features]
 	
 	# 分割数据集为训练集和测试集
 	scaler = MinMaxScaler()
