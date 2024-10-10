@@ -45,6 +45,9 @@ data = pd.read_csv('your_file.csv')
 X = data.iloc[:, :-1].values  # 特征列
 y = data.iloc[:, -1].values   # 目标列
 
+scaler = StandardScaler()  # 你可以选择使用 Normalizer() 代替 StandardScaler
+X = scaler.fit_transform(X)  # 标准化特征数据
+
 # 进行标签编码和 one-hot 编码
 encoder = LabelEncoder()
 y = encoder.fit_transform(y)
