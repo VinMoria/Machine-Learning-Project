@@ -1,59 +1,87 @@
+from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.linear_model import Ridge
-from sklearn.linear_model import Lasso
+from datetime import datetime
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn import linear_model
+import pandas as pd
+import pickle
+import numpy as np
+import os
 
+FILEPATH = "train_set/"
 #get data
+def train_Ridge_for_sector(Sector):
+	# 假设 X 是特征矩阵，y 是目标变量
+	df = pd.read_csv(FILEPATH + Sector + ".csv")
+	# log 方法
+	df["Market Cap(M)"] = np.log(df["Market Cap(M)"].replace(0, np.nan))
+	y = df["Market Cap(M)"]
+	X = df.drop(columns=["Market Cap(M)", "Quarter", "Ticker"])
+	
+	# 分割数据集为训练集和测试集
+	scaler = MinMaxScaler()
+	X_train, X_test, y_train, y_test = train_test_split(X, y,test_size= 0.2,
+														random_state = 0)
+	X_train_scaled = scaler.fit_transform(X_train)
+	X_test_scaled = scaler.transform(X_test)		
+
+	# way2 用交叉验证选择参数
+	r2 = []
+	alpha_range = np.logspace(-2, 3, 100) #alpha 范围> 稳定
+
+	for a in alpha_range:
+		ridge = linear_model.Ridge(alpha = a)
+		ridge_r2 = cross_val_score(ridge, X_train_scaled, y_train, cv=10).mean() #ridge，X_std自变量，y因变量，cv=10 10折交叉验证
+		r2.append(ridge_r2)
+
+	best_alpha = alpha_range[r2.index(max(r2))]
+	print('best_alpha is ', best_alpha)
+	print('best meanR2 is', max(r2))
 
 
-#feature normalization
-scaler = MinMaxScaler()
-X_train, X_test, y_train, y_test = train_test_split(X_crime, y_crime,
-                                                   random_state = 0)
+	ridge_bestalpha = linear_model.Ridge(alpha = best_alpha)
+	ridge_bestalpha.fit(X_train_scaled, y_train)
+	ridge_trainscore = ridge_bestalpha.score(X_train_scaled, y_train)
+	ridge_testscore = ridge_bestalpha.score(X_test_scaled, y_test)
 
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+		# 在验证集上进行预测
+	y_pred = ridge_bestalpha.predict(X_test_scaled)
 
-#train Ridge model with normalized feature
-linridge = Ridge(alpha=20.0).fit(X_train_scaled, y_train)
-#find best alpha for ridge
-print('Ridge regression: effect of alpha regularization parameter\n')
-for this_alpha in [0, 1, 10, 20, 50, 100, 1000]:
-    linridge = Ridge(alpha = this_alpha).fit(X_train_scaled, y_train)
-    r2_train = linridge.score(X_train_scaled, y_train)
-    r2_test = linridge.score(X_test_scaled, y_test)
-    num_coeff_bigger = np.sum(abs(linridge.coef_) > 1.0)
-    print('Alpha = {:.2f}\nnum abs(coeff) > 1.0: {}, \
-r-squared training: {:.2f}, r-squared test: {:.2f}\n'
-         .format(this_alpha, num_coeff_bigger, r2_train, r2_test))
+	mse = mean_squared_error(y_test, y_pred)
+	rmse = mse**0.5
+	print(f"MSE: {mse:.2f}, RMSE: {rmse:.2f}")
+
+		# 保存模型
+	saved_filename = f"{Sector}_{datetime.now().strftime('%m%d%H%M')}.ml"
+	with open(f"XGBoost_model/{saved_filename}", "wb") as f:
+		pickle.dump(ridge_bestalpha, f)
+		print(f"save file: {saved_filename}")
 
 
-#train Lasso model
-linlasso = Lasso(alpha=2.0, max_iter = 10000).fit(X_train_scaled, y_train)
-#print effective feature for lasso
-for e in sorted (list(zip(list(X_crime), linlasso.coef_)),
-                key = lambda e: -abs(e[1])):
-    if e[1] != 0:
-        print('\t{}, {:.3f}'.format(e[0], e[1]))
-print('Lasso regression: effect of alpha regularization\n\
-parameter on number of features kept in final model\n')
-#find best alpha for lasso
-for alpha in [0.5, 1, 2, 3, 5, 10, 20, 50]:
-    linlasso = Lasso(alpha, max_iter = 10000).fit(X_train_scaled, y_train)
-    r2_train = linlasso.score(X_train_scaled, y_train)
-    r2_test = linlasso.score(X_test_scaled, y_test)
-    print('Alpha = {:.2f}\nFeatures kept: {}, r-squared training: {:.2f}, \
-r-squared test: {:.2f}\n')
-    
-    
+# 清空XGBoost_model下的文件
+folder_path = "Ridge_model"
+for filename in os.listdir(folder_path):
+	file_path = os.path.join(folder_path, filename)
+	if os.path.isfile(file_path):
+		os.remove(file_path)
+print("old models deleted")
 
-#train elastic model
-#find best alpha and lambda
+sector_list = [
+	"Healthcare",
+	"Basic Materials",
+	"Financial",
+	"Consumer Defensive","Industrials",
+	"Technology",
+	"Consumer Cyclical",
+	"Real Estate",
+	"Communication Services",
+	"Energy",
+	"Utilities",
+]
 
+# for sector in sector_list:
+# 	train_XGBoost_for_sector(sector)
 
-
-
-#compare three model
-
-
-
-#return the best model
+train_Ridge_for_sector("Utilities")
