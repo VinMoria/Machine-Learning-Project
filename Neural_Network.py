@@ -16,6 +16,8 @@ def create_model(learning_rate=0.01, neurons=64):
     return model
 
 # 自定义 KerasClassifier
+# 就自带的keras插件它升级不了又不让用我们就自己手动搭建了如下
+#看不懂但反正能用
 class MyKerasClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, build_fn=create_model, epochs=10, batch_size=32, learning_rate=0.01, neurons=64, verbose=0):
         self.build_fn = build_fn
@@ -44,6 +46,9 @@ data = pd.read_csv('your_file.csv')
 # 假设特征数据位于前几列，目标列是最后一列
 X = data.iloc[:, :-1].values  # 特征列
 y = data.iloc[:, -1].values   # 目标列
+
+scaler = StandardScaler()  # 你可以选择使用 Normalizer() 代替 StandardScaler
+X = scaler.fit_transform(X)  # 标准化特征数据
 
 # 进行标签编码和 one-hot 编码
 encoder = LabelEncoder()
