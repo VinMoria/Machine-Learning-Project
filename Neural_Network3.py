@@ -5,44 +5,58 @@ Created on Thu Oct 10 15:58:40 2024
 @author: yyyyyy
 """
 
-import numpy as np
 import pandas as pd
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+import numpy as np
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dense, Input, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-import pickle
-from datetime import datetime
+from sklearn.impute import KNNImputer  # 导入 KNNImputer
 import os
+from datetime import datetime
 import json
 
 TRAIN_SET_PATH = "train_set/"
 FEATURE_PATH = "importance/"
 FEATURE_SELECT_TOP = 20
 
-# 定义神经网络模型创建函数
-def create_model(learning_rate=0.01, neurons=64):
-    model = Sequential()
-    model.add(Dense(neurons, input_dim=FEATURE_SELECT_TOP, activation='relu'))  # 隐藏层
-    model.add(Dense(1, activation='linear'))  # 输出层，用于回归任务
+# 定义创建神经网络模型的函数，增加hidden_layers和dropout
+def create_model(learning_rate=0.01, neurons=64, hidden_layers=1, dropout_rate=0.0):
+    inputs = Input(shape=(FEATURE_SELECT_TOP,))
+    x = Dense(neurons, activation='relu')(inputs)
+    
+    # 添加额外的隐藏层和Dropout层
+    for _ in range(hidden_layers - 1):
+        x = Dense(neurons, activation='relu')(x)
+        if dropout_rate > 0:
+            x = Dropout(dropout_rate)(x)
+
+    outputs = Dense(1, activation='linear')(x)  # 输出层，用于回归任务
+    model = Model(inputs, outputs)
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
 
-# 自定义 KerasClassifier 用于 GridSearchCV
 class MyKerasClassifier:
-    def __init__(self, build_fn=create_model, epochs=10, batch_size=32, learning_rate=0.01, neurons=64, verbose=0):
+    def __init__(self, build_fn=create_model, epochs=10, batch_size=32, learning_rate=0.01, neurons=64, hidden_layers=1, dropout_rate=0.0, verbose=0):
         self.build_fn = build_fn
         self.epochs = epochs
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.neurons = neurons
+        self.hidden_layers = hidden_layers
+        self.dropout_rate = dropout_rate
         self.verbose = verbose
         self.model_ = None
 
     def fit(self, X, y):
-        self.model_ = self.build_fn(learning_rate=self.learning_rate, neurons=self.neurons)
-        self.model_.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose)
+        self.model_ = self.build_fn(learning_rate=self.learning_rate, neurons=self.neurons, hidden_layers=self.hidden_layers, dropout_rate=self.dropout_rate)
+        
+        # 使用 EarlyStopping 回调来防止过拟合
+        early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+        
+        self.model_.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose, validation_split=0.2, callbacks=[early_stopping])
         return self
 
     def predict(self, X):
@@ -50,13 +64,29 @@ class MyKerasClassifier:
 
     def score(self, X, y):
         predictions = self.model_.predict(X)
-        return -mean_squared_error(y, predictions)  # 返回负的均方误差，符合 GridSearchCV 的标准
+        return -mean_squared_error(y, predictions) 
+
+    def get_params(self, deep=True):
+        return {
+            'epochs': self.epochs,
+            'batch_size': self.batch_size,
+            'learning_rate': self.learning_rate,
+            'neurons': self.neurons,
+            'hidden_layers': self.hidden_layers,
+            'dropout_rate': self.dropout_rate,
+            'verbose': self.verbose,
+        }
+
+    def set_params(self, **params):
+        for param, value in params.items():
+            setattr(self, param, value)
+        return self
 
 def train_NN_for_sector(Sector):
     # 读取数据集
     df = pd.read_csv(TRAIN_SET_PATH + Sector + ".csv")
 
-    # log 方法
+    # log 方法处理 Market Cap(M)
     df["Market Cap(M)"] = np.log(df["Market Cap(M)"].replace(0, np.nan))
     y = df["Market Cap(M)"]
 
@@ -68,21 +98,27 @@ def train_NN_for_sector(Sector):
     X = df[top_features]
     print(X.shape)
 
+    # 使用 KNNImputer 处理缺失值
+    imputer = KNNImputer(n_neighbors=5)
+    X = imputer.fit_transform(X)
+
     # 归一化
     scaler = MinMaxScaler()
-    X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+    X = pd.DataFrame(scaler.fit_transform(X), columns=top_features)
     print(list(X.iloc[0]))
 
     # 分割数据集为训练集和测试集
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     print(y_test.describe())
 
-    # 定义参数网格
+    # 定义参数网格，增加hidden_layers和dropout_rate
     param_grid = {
         'epochs': [50, 100],
         'batch_size': [5, 10],
         'learning_rate': [0.01, 0.001],
-        'neurons': [32, 64]
+        'neurons': [32, 64],
+        'hidden_layers': [1, 2],
+        'dropout_rate': [0.0, 0.2]
     }
 
     # 使用 GridSearchCV 进行参数搜索
@@ -101,14 +137,15 @@ def train_NN_for_sector(Sector):
     y_pred = best_model.predict(X_test)
 
     mse = mean_squared_error(y_test, y_pred)
-    rmse = mse**0.5
+    rmse = mse ** 0.5
     print(f"MSE: {mse:.2f}, RMSE: {rmse:.2f}")
 
     # 保存模型
-    saved_filename = f"{Sector}_{datetime.now().strftime('%m%d%H%M')}.ml"
-    with open(f"NN_model/{saved_filename}", "wb") as f:
-        pickle.dump(best_model, f)
-    print(f"save file: {saved_filename}")
+    saved_filename = f"{Sector}_{datetime.now().strftime('%m%d%H%M')}.h5"
+    if not os.path.exists("NN_model"):
+        os.makedirs("NN_model")
+    best_model.model_.save(f"NN_model/{saved_filename}")
+    print(f"Model saved as: {saved_filename}")
 
     res_dict = {
         "Sector": Sector,
@@ -117,28 +154,7 @@ def train_NN_for_sector(Sector):
     }
     return res_dict
 
-# ==================  main start  ==================
-# 清空NN_model下的文件
-folder_path = "NN_model"
-if not os.path.exists(folder_path):
-    os.makedirs(folder_path)
+train_NN_for_sector("Utilities")
 
-for filename in os.listdir(folder_path):
-    file_path = os.path.join(folder_path, filename)
-    if os.path.isfile(file_path):
-        os.remove(file_path)
-print("old models deleted")
 
-sector_list = [
-    "Healthcare", "Basic Materials", "Financial", "Consumer Defensive", "Industrials",
-    "Technology", "Consumer Cyclical", "Real Estate", "Communication Services", "Energy", "Utilities",
-]
-
-res_dict_list = []
-for sector in sector_list:
-    print(f"=============== {sector} start ===============")
-    res_dict_list.append(train_NN_for_sector(sector))
-
-with open(f'NN_model/res.json', 'w') as f:
-    json.dump(res_dict_list, f, indent=4)
 
