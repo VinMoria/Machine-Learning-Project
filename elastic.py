@@ -38,16 +38,12 @@ def train_Ridge_for_sector(Sector):
 	# way2 用交叉验证选择参数
 	r2 = []
 	alpha_range = np.logspace(-2, 3, 100) #alpha 范围> 稳定
-
 	for a in alpha_range:
 		ridge = linear_model.Ridge(alpha = a)
 		ridge_r2 = cross_val_score(ridge, X_train_scaled, y_train, cv=10).mean() #ridge，X_std自变量，y因变量，cv=10 10折交叉验证
 		r2.append(ridge_r2)
-
+    
 	best_alpha = alpha_range[r2.index(max(r2))]
-	print('best_alpha is ', best_alpha)
-	print('best meanR2 is', max(r2))
-
 
 	ridge_bestalpha = linear_model.Ridge(alpha = best_alpha)
 	ridge_bestalpha.fit(X_train_scaled, y_train)
@@ -89,7 +85,6 @@ sector_list = [
 	"Utilities",
 ]
 
-# for sector in sector_list:
-# 	train_XGBoost_for_sector(sector)
+
 
 train_Ridge_for_sector("Utilities")
