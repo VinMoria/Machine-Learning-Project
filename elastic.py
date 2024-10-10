@@ -36,7 +36,6 @@ def train_Ridge_for_sector(Sector):
 	X_test_scaled = scaler.transform(X_test)		
 
 	# way2 用交叉验证选择参数
- #rrrtr
 	r2 = []
 	alpha_range = np.logspace(-2, 3, 100) #alpha 范围> 稳定
 
