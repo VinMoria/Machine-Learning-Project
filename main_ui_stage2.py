@@ -6,8 +6,13 @@ import openpyxl
 import json
 import numpy as np
 import pickle
-
+import sentiment
 import openpyxl.workbook
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+from openpyxl.drawing.image import Image
 
 feature_label_list = []
 feature_entry_list = []
@@ -110,11 +115,33 @@ def onclick_submit():
 		sheet1["C1"] = "Valuation Result(M)"
 		sheet1["D1"] = str(res_valuation)
 
-		filename = "valuAItion_result_"+time.strftime('%Y-%m-%d_%H%M%S', time.localtime())+".xlsx"
-		workbook.save(filename)
-		os.startfile(filename)
-		print(f"Successfully write into {filename}")
+		# sentiment
+		sheet2 = workbook.create_sheet(title="Sentiment")
+		current_date = datetime.now()
+		current_year_month_day = current_date.strftime('%Y-%m-%d')
+		one_month_ago = current_date - relativedelta(months=1)
+		one_month_ago_year_month_day = one_month_ago.strftime('%Y-%m-%d')
+		sentiment_score, long_text = sentiment.get_company_sentiment(company_name_entry.get(), one_month_ago_year_month_day, current_year_month_day)
+		sheet2["A1"] = "Sentiment in last 1 month"
+		sheet2["B1"] = str(sentiment_score)
+		sheet2["A2"] = "From"
+		sheet2["B2"] = one_month_ago_year_month_day
+		sheet2["A3"] = "To"
+		sheet2["B3"] = current_year_month_day
 
+		# word Cloud
+		wordcloud = WordCloud(width=800, height=400, background_color='white').generate(long_text)
+		image_path = 'result_excel/wordcloud.png'
+		wordcloud.to_file(image_path)
+		img = Image(image_path)
+		sheet2.add_image(img, 'D5')
+
+		filename = "result_excel\\valuAItion_result_"+time.strftime('%Y-%m-%d_%H%M%S', time.localtime())+".xlsx"
+		workbook.save(filename)
+		time.sleep(1)
+		print(f"Successfully write into {filename}")
+		os.startfile(filename)
+		
 		#TODO 在UI上显示结果
 			
 def onclick_clear():
@@ -127,14 +154,13 @@ def onclick_clear():
 		entry.delete(0, tk.END)
 
 def check_input(in_str):
-	# FIXME 是否可以接受空值
+	# TODO 是否可以接受空值
 	if in_str == "" : return True
 	try:
 		float(in_str)
 		return True
 	except ValueError:
 		return False
-
 
 # Main start
 SECTOR_LIST = ['Healthcare', 'Basic Materials', 'Financial', 'Consumer Defensive', 'Industrials',
