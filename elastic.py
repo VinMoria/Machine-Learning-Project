@@ -14,7 +14,7 @@ import os
 
 FILEPATH = "train_set/"
 FEATURE_PATH = "importance/"
-FEATURE_SELECT_TOP = 10
+FEATURE_SELECT_TOP = 20
 
 #get data
 def train_Ridge_for_sector(Sector):
@@ -97,59 +97,3 @@ train_Ridge_for_sector("Utilities")
 
 
 
-# import numpy as np
-# from sklearn.model_selection import train_test_split, GridSearchCV
-# from sklearn.linear_model import ElasticNet
-# from sklearn.impute import KNNImputer
-# from sklearn.pipeline import Pipeline
-# from sklearn.metrics import make_scorer, mean_squared_error
-
-# # 创建示例数据，包含一些缺失值
-# np.random.seed(42)
-# X = np.random.rand(100, 5)  # 100行，5列的特征
-# y = X @ np.array([1.5, -2, 3, 0, -1]) + np.random.randn(100) * 0.5  # 随机生成目标变量
-
-# # 将部分数据设置为NaN
-# X[0:10, 0] = np.nan
-
-# # 划分训练集和测试集
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# # 创建一个Pipeline，其中包括KNNImputer和ElasticNet
-# pipeline = Pipeline([
-#     ('imputer', KNNImputer()),
-#     ('elastic_net', ElasticNet(max_iter=10000, random_state=42))
-# ])
-
-# # 定义参数网格，包括KNNImputer的n_neighbors和ElasticNet的超参数
-# param_grid = {
-#     'imputer__n_neighbors': [3, 5, 7, 10],  # 选择不同的n_neighbors值
-#     'elastic_net__alpha': np.logspace(-3, 3, 10),  # alpha的范围
-#     'elastic_net__l1_ratio': np.linspace(0, 1, 5)  # l1_ratio的范围
-# }
-
-# # 使用GridSearchCV进行超参数搜索，使用neg_mean_squared_error作为评分标准
-# grid_search = GridSearchCV(
-#     pipeline,
-#     param_grid,
-#     scoring=make_scorer(mean_squared_error, greater_is_better=False),  # 使用MSE作为评分标准
-#     cv=5  # 5折交叉验证
-# )
-# grid_search.fit(X_train, y_train)
-
-# # 获取最优的n_neighbors、alpha和l1_ratio
-# best_n_neighbors = grid_search.best_params_['imputer__n_neighbors']
-# best_alpha = grid_search.best_params_['elastic_net__alpha']
-# best_l1_ratio = grid_search.best_params_['elastic_net__l1_ratio']
-# print(f'Best n_neighbors: {best_n_neighbors}')
-# print(f'Best alpha: {best_alpha}')
-# print(f'Best l1_ratio: {best_l1_ratio}')
-
-# # 使用最优参数重新训练模型，并在测试集上评估
-# best_model = grid_search.best_estimator_
-# y_test_pred = best_model.predict(X_test)
-# test_mse = mean_squared_error(y_test, y_test_pred)
-# test_rmse = np.sqrt(test_mse)
-
-# print(f'Test MSE: {test_mse:.4f}')
-# print(f'Test RMSE: {test_rmse:.4f}')
