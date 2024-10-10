@@ -91,7 +91,7 @@ def train_XGBoost_for_sector(Sector):
 	print(f"MSE: {mse:.2f}, RMSE: {rmse:.2f}")
 
 	# 保存模型
-	saved_filename = f"{Sector}_{datetime.now().strftime('%m%d%H%M')}.ml"
+	saved_filename = f"{Sector}.ml"
 	with open(f"XGBoost_model/{saved_filename}", "wb") as f:
 		pickle.dump(best_model, f)
 	print(f"save file: {saved_filename}")
@@ -132,5 +132,5 @@ for sector in sector_list:
 	print(f"=============== {sector} start ===============")
 	res_dict_list.append(train_XGBoost_for_sector(sector))
 
-with open(f'XGBoost_model/res.json', 'w') as f:
+with open(f'XGBoost_model/res.json', 'wb') as f:
     json.dump(res_dict_list, f, indent=4)

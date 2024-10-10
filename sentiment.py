@@ -12,7 +12,6 @@ def get_stock_sentiment(stock_code, start_date, end_date, url_sentiment="https:/
     company_name = stock_info.info['longName']
     # print(f"stock code: {stock_code} , company name：{company_name}")
     symbs = company_name
-    #TODO date转为参数
     # current_date = datetime.now().date()
     url_sentiments = [url_sentiment.format(symbs, start_date, end_date)]
 
