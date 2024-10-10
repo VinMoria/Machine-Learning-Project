@@ -16,6 +16,8 @@ def create_model(learning_rate=0.01, neurons=64):
     return model
 
 # 自定义 KerasClassifier
+# 就自带的keras插件它升级不了又不让用我们就自己手动搭建了如下
+#看不懂但反正能用
 class MyKerasClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, build_fn=create_model, epochs=10, batch_size=32, learning_rate=0.01, neurons=64, verbose=0):
         self.build_fn = build_fn
