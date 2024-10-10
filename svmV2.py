@@ -2,7 +2,7 @@ from sklearn.svm import SVR
 from sklearn.pipeline import Pipeline
 from sklearn.impute import KNNImputer
 from sklearn.model_selection import GridSearchCV, cross_val_score,train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler,MinMaxScaler
 from sklearn.metrics import mean_squared_error,make_scorer
 from sklearn.preprocessing import PolynomialFeatures
 from datetime import datetime
@@ -15,12 +15,6 @@ import pickle
 FILEPATH = "train_set/"
 FEATURE_PATH = "importance/"
 FEATURE_SELECT_TOP = 20
-
-def calculate_rmse(estimator, X, y, cv=5):
-    """ 计算给定模型的平均 RMSE """
-    mse_scores = cross_val_score(estimator, X, y, cv=cv, scoring=make_scorer(mean_squared_error, greater_is_better=False))
-    rmse = np.sqrt(-mse_scores.mean())  # 计算平均 RMSE
-    return rmse
 
 def train_svm_model(Sector):
     # 读取数据
@@ -46,12 +40,11 @@ def train_svm_model(Sector):
 
     # 定义参数网格
     param_grid = {
-    'imputer__n_neighbors': [3, 5, 7, 10],
-    'svm__C': np.linspace(1, 10, 5),  # 更细化的C值范围
-    'svm__epsilon': np.linspace(0.01, 0.1, 5),  # 更细化的epsilon值范围
-    'svm__gamma': ['scale', 'auto'] + np.logspace(-3, 3, 7).tolist()  # gamma的取值范围
+    'imputer__n_neighbors': [3, 5, 7, 10],  # KNN Imputer的邻居数量
+    'svm__C': np.linspace(1, 10, 20),  # 使用更多点以细化C值范围
+    'svm__epsilon': np.linspace(0.01, 0.1, 10),  # 使用更多点以细化epsilon值范围
+    'svm__gamma': ['scale', 'auto'] + np.logspace(-3, 1, 5).tolist()  # gamma的更细化取值范围
 }
-
 
 # 使用GridSearchCV进行超参数搜索
     grid_search = GridSearchCV(
@@ -67,6 +60,7 @@ def train_svm_model(Sector):
 
 # 输出最佳参数组合
     print(f'Best parameters: {grid_search.best_params_}')
+    best_model = grid_search.best_estimator_
 
 # 预测测试集并计算RMSE
     y_test_pred = grid_search.best_estimator_.predict(X_test)
@@ -75,7 +69,9 @@ def train_svm_model(Sector):
 
     print(f'Test MSE: {test_mse:.4f}')
     print(f'Test RMSE: {test_rmse:.4f}')
-# 保存模型
+    
+
+#保存模型
     saved_filename = f"{Sector}_{datetime.now().strftime('%m%d%H%M')}.ml"
     with open(f"SVM_model/{saved_filename}", "wb") as f:
         pickle.dump(best_model, f)
@@ -84,7 +80,7 @@ def train_svm_model(Sector):
     res_dict = {
 		"Sector": Sector,
 		"Features": top_features,
-		"RMSE": rmse
+		"RMSE": test_rmse
 	}
     return res_dict
 
