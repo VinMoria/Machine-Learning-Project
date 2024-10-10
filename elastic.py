@@ -4,6 +4,7 @@ from datetime import datetime
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
+from sklearn.impute import KNNImputer
 from sklearn import linear_model
 import pandas as pd
 import pickle
@@ -34,24 +35,33 @@ def train_Ridge_for_sector(Sector):
 														random_state = 0)
 	X_train_scaled = scaler.fit_transform(X_train)
 	X_test_scaled = scaler.transform(X_test)		
+ 
+ 
+	imputer = KNNImputer(n_neighbors=2)
+
+	# 在训练集上拟合 imputer 并转换训练集
+	X_train_imputed = imputer.fit_transform(X_train_scaled)
+
+	# 使用相同的 imputer 转换测试集
+	X_test_imputed = imputer.transform(X_test_scaled)
 
 	# way2 用交叉验证选择参数
 	r2 = []
 	alpha_range = np.logspace(-2, 3, 100) #alpha 范围> 稳定
 	for a in alpha_range:
 		ridge = linear_model.Ridge(alpha = a)
-		ridge_r2 = cross_val_score(ridge, X_train_scaled, y_train, cv=10).mean() #ridge，X_std自变量，y因变量，cv=10 10折交叉验证
+		ridge_r2 = cross_val_score(ridge, X_train_imputed, y_train, cv=10).mean() #ridge，X_std自变量，y因变量，cv=10 10折交叉验证
 		r2.append(ridge_r2)
     
 	best_alpha = alpha_range[r2.index(max(r2))]
 
 	ridge_bestalpha = linear_model.Ridge(alpha = best_alpha)
-	ridge_bestalpha.fit(X_train_scaled, y_train)
-	ridge_trainscore = ridge_bestalpha.score(X_train_scaled, y_train)
-	ridge_testscore = ridge_bestalpha.score(X_test_scaled, y_test)
+	ridge_bestalpha.fit(X_train_imputed, y_train)
+	ridge_trainscore = ridge_bestalpha.score(X_train_imputed, y_train)
+	ridge_testscore = ridge_bestalpha.score(X_test_imputed, y_test)
 
 		# 在验证集上进行预测
-	y_pred = ridge_bestalpha.predict(X_test_scaled)
+	y_pred = ridge_bestalpha.predict(X_test_imputed)
 
 	mse = mean_squared_error(y_test, y_pred)
 	rmse = mse**0.5
