@@ -137,5 +137,4 @@ for sector in sector_list:
 with open(f'XGBoost_model/res.json', 'w') as f:
     json.dump(res_dict_list, f, indent=4)
 
-# test from web
-# test from vscode
+# test from web 2
