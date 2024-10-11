@@ -10,6 +10,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import keras_tuner as kt
 from kerastuner import HyperParameters, Objective
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
 
 # 固定随机种子以确保可复现性
 SEED = 42
@@ -29,6 +31,7 @@ df = pd.read_csv(os.path.join(FILEPATH, f"{Sector}.csv"))
 
 # 处理“Market Cap(M)”列：替换0为NaN，然后取自然对数
 df["Market Cap(M)"] = np.log(df["Market Cap(M)"].replace(0, np.nan))
+df["Market Cap(M)"].fillna(df["Market Cap(M)"].mean(), inplace=True)  # 填补NaN
 
 # 目标变量
 y = df["Market Cap(M)"]
@@ -157,18 +160,3 @@ history = model.fit(
 test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
 print('模型评估的均方误差 (MSE):', test_loss)
 print('模型评估的均方根误差 (RMSE):', test_rmse)
-
-# 反标准化和反对数转换
-y_pred = model.predict(X_test_scaled)
-y_pred_unscaled = y_scaler.inverse_transform(y_pred)
-y_test_unscaled = y_scaler.inverse_transform(y_test_scaled)
-
-y_pred_original = np.exp(y_pred_unscaled)
-y_test_original = np.exp(y_test_unscaled)
-
-# 评估原始空间
-mse_original = mean_squared_error(y_test_original, y_pred_original)
-rmse_original = np.sqrt(mse_original)
-r2_original = r2_score(y_test_original, y_pred_original)
-
-print(f'原始空间 - MSE: {mse_original}, RMSE: {rmse_original}, R2: {r2_original}')
