@@ -25,7 +25,7 @@ tf.random.set_seed(SEED)
 # 数据读取和预处理
 FILEPATH = "train_set/"
 FEATURE_PATH = "importance/"
-FEATURE_SELECT_TOP = 50
+FEATURE_SELECT_TOP = 20
 Sector = 'Utilities'
 
 # 读取主数据集
