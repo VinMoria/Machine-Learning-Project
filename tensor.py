@@ -4,16 +4,12 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers, models, optimizers,regularizers
+from tensorflow.keras import layers, models, optimizers, regularizers
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
-import matplotlib.pyplot as plt
 import keras_tuner as kt
 from kerastuner import HyperParameters, Objective
-from kerastuner import Hyperband
-from sklearn.metrics import r2_score
 
 # 固定随机种子以确保可复现性
 SEED = 42
@@ -79,72 +75,85 @@ y_scaler = StandardScaler()
 y_train_scaled = y_scaler.fit_transform(y_train.values.reshape(-1, 1))
 y_test_scaled = y_scaler.transform(y_test.values.reshape(-1, 1))
 
+# 构建模型函数
 def build_model(hp):
     model = models.Sequential()
     model.add(layers.Input(shape=(X_train_scaled.shape[1],)))
     
     # 增加隐藏层和神经元数量
-    for i in range(hp.Int('num_layers', 2, 6)):  # 尝试更多层
-        units = hp.Int(f'units_{i}', min_value=64, max_value=512, step=32)  # 增加神经元范围
-        model.add(layers.Dense(units, activation='relu', kernel_regularizer=regularizers.l2(hp.Choice('l2_' + str(i), values=[1e-5, 1e-4, 1e-3, 1e-2]))))
+    for i in range(hp.Int('num_layers', 2, 3)):  # 降低层数上限
+        units = hp.Int(f'units_{i}', min_value=64, max_value=192, step=32)  # 缩小神经元范围
+        
+        # 选择激活函数
+        activation = hp.Choice('activation', values=['relu', 'swish'])  # 移除 tanh
+        model.add(layers.Dense(units, activation=activation, 
+                               kernel_regularizer=regularizers.l2(hp.Choice('l2_' + str(i), values=[1e-5, 1e-4]))))  # 缩小正则化范围
         model.add(layers.BatchNormalization())
         
-        dropout_rate = hp.Float(f'dropout_{i}', min_value=0.1, max_value=0.7, step=0.1)  # 调整Dropout范围
+        dropout_rate = hp.Float(f'dropout_{i}', min_value=0.3, max_value=0.5, step=0.1)  # 调整 Dropout 范围
         model.add(layers.Dropout(dropout_rate))
 
     model.add(layers.Dense(1))  # 输出层
 
-    learning_rate = hp.Float('learning_rate', min_value=1e-6, max_value=1e-2, sampling='LOG')  # 使用对数取样
+    learning_rate = hp.Float('learning_rate', min_value=1e-5, max_value=1e-3, sampling='LOG')  # 缩小学习率范围
     optimizer = optimizers.Adam(learning_rate=learning_rate)
+    
     def rmse(y_true, y_pred):
         return tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
 
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae', rmse])
     return model
 
-# -------------------- 设置 Keras Tuner 并执行网格搜索 --------------------
-tuner = kt.BayesianOptimization(  # 更改为贝叶斯优化以提高效率
+# 初始化 Keras Tuner 的 Bayesian Optimization
+tuner = kt.BayesianOptimization(
     build_model,
     objective=Objective("val_rmse", direction="min"),
-    max_trials=30,  # 增加尝试次数以探索更多超参数组合
+    max_trials=20,  # 减少试验次数
     directory='my_dir',
-    project_name='bayesian_search_nn',
+    project_name='bayesian_search_nn_optimized',
     overwrite=True,
     seed=SEED
 )
 
+# 定义回调函数
+callbacks = [
+    keras.callbacks.EarlyStopping(monitor='val_rmse', patience=5, restore_best_weights=True, mode='min'),  # 缩短耐心值
+    keras.callbacks.TerminateOnNaN(),
+    keras.callbacks.ReduceLROnPlateau(monitor='val_rmse', factor=0.5, patience=3, min_lr=1e-6)  # 添加学习率调度
+]
+
 # 执行超参数搜索
 tuner.search(
     X_train_scaled, y_train_scaled,
-    epochs=200,  # 增加训练轮次
+    epochs=100,  # 减少训练轮数
     batch_size=32,
     validation_split=0.2,
-    callbacks=[
-        keras.callbacks.EarlyStopping(monitor='val_rmse', patience=15, restore_best_weights=True, mode='min'),
-        keras.callbacks.TerminateOnNaN()
-    ]
+    callbacks=callbacks
 )
 
 # 获取最佳超参数
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
-# -------------------- 构建并训练最佳模型 --------------------
-model = tuner.hypermodel.build(best_hps)
+print("最佳超参数组合：")
+print(f"隐藏层数量: {best_hps.get('num_layers')}")
+for i in range(best_hps.get('num_layers')):
+    print(f"第 {i+1} 层的神经元数量: {best_hps.get(f'units_{i}')}")
+    print(f"第 {i+1} 层的激活函数: {best_hps.get('activation')}")
+    print(f"第 {i+1} 层的 L2 正则化: {best_hps.get(f'l2_{i}')}")
+    print(f"第 {i+1} 层的 Dropout 率: {best_hps.get(f'dropout_{i}')}")
+print(f"学习率: {best_hps.get('learning_rate')}")
 
-# 训练最佳模型
+# 构建并训练最佳模型
+model = tuner.hypermodel.build(best_hps)
 history = model.fit(
     X_train_scaled, y_train_scaled,
-    epochs=300,  # 增加训练轮次
+    epochs=100,  # 保持一致
     batch_size=32,
     validation_split=0.2,
-    callbacks=[
-        keras.callbacks.EarlyStopping(monitor='val_rmse', patience=15, restore_best_weights=True, mode='min'),
-        keras.callbacks.TerminateOnNaN()
-    ]
+    callbacks=callbacks
 )
 
-# -------------------- 评估最佳模型 --------------------
+# 评估最佳模型
 test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
-
 print('模型评估的均方误差 (MSE):', test_loss)
 print('模型评估的均方根误差 (RMSE):', test_rmse)
