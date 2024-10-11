@@ -113,13 +113,15 @@ def train_NN_for_sector(Sector):
 
     # 定义参数网格，增加hidden_layers和dropout_rate
     param_grid = {
-        'epochs': [50, 100],
-        'batch_size': [5, 10],
-        'learning_rate': [0.01, 0.001],
-        'neurons': [32, 64],
-        'hidden_layers': [1, 2],
-        'dropout_rate': [0.0, 0.2]
-    }
+    'epochs': [50, 100],
+    'batch_size': [5, 10],
+    'learning_rate': [0.01, 0.001],
+    'neurons': [64, 128],  # 增加神经元数量
+    'hidden_layers': [2, 3],  # 增加隐藏层数量
+    'dropout_rate': [0.0, 0.2]
+}
+
+
 
     # 使用 GridSearchCV 进行参数搜索
     grid_search = GridSearchCV(
