@@ -1,0 +1,1 @@
+ssh -i "RSA-1.pem" ec2-user@ec2-13-213-77-232.ap-southeast-1.compute.amazonaws.com
