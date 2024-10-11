@@ -74,10 +74,10 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# # 标准化目标变量
-# y_scaler = StandardScaler()
-# y_train_scaled = y_scaler.fit_transform(y_train.values.reshape(-1, 1))
-# y_test_scaled = y_scaler.transform(y_test.values.reshape(-1, 1))
+# 标准化目标变量
+y_scaler = StandardScaler()
+y_train_scaled = y_scaler.fit_transform(y_train.values.reshape(-1, 1))
+y_test_scaled = y_scaler.transform(y_test.values.reshape(-1, 1))
 
 
 
@@ -117,7 +117,7 @@ tuner = kt.GridSearch(
 
 # 执行超参数搜索
 tuner.search(
-    X_train_scaled, y_train,
+    X_train_scaled, y_train_scaled,
     epochs=100,
     batch_size=32,
     validation_split=0.2,
@@ -144,7 +144,7 @@ model = tuner.hypermodel.build(best_hps)
 
 # 训练最佳模型
 history = model.fit(
-    X_train_scaled, y_train,
+    X_train_scaled, y_train_scaled,
     epochs=200,
     batch_size=32,
     validation_split=0.2,
@@ -156,7 +156,7 @@ history = model.fit(
 
 # -------------------- 评估最佳模型 --------------------
 # 在测试集上评估模型
-test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test, verbose=2)
+test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
 
 # 使用模型进行预测
 #y_pred_scaled = model.predict(X_test_scaled)
