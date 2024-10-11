@@ -5,6 +5,7 @@ from sklearn.model_selection import GridSearchCV, cross_val_score,train_test_spl
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
 from sklearn.metrics import mean_squared_error,make_scorer
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.ensemble import RandomForestRegressor, StackingRegressor
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -31,19 +32,27 @@ def train_svm_model(Sector):
     # 划分训练集和测试集
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+    base_models = [
+            ('svm', SVR(kernel='rbf')),
+            ('rf', RandomForestRegressor(n_estimators=100, random_state=42))
+    ]
+    
+    stacked_model = StackingRegressor(estimators=base_models, final_estimator=RandomForestRegressor(n_estimators=100, random_state=42))
     # 创建管道，使用 SVM
     pipeline = Pipeline([
     ('imputer', KNNImputer()),
     ('scaler', StandardScaler()),
-    ('svm', SVR(kernel='rbf'))
+    ('stacked', stacked_model)
+    #('svm', SVR(kernel='rbf'))
     ])
 
     # 定义参数网格
     param_grid = {
     'imputer__n_neighbors': [7, 10],  # KNN Imputer的邻居数量(3,5,7,10)
-    'svm__C': [10],  # 使用更多点以细化C值范围(1, 10, 20)
-    'svm__epsilon': np.linspace(0.01, 0.1, 10),  # 使用更多点以细化epsilon值范围
-    'svm__gamma': [1, 10]  # gamma的更细化取值范围['scale', 'auto'] + np.logspace(-3, 1, 5).tolist()
+    'stacked__svm__C': [10],  # 使用更多点以细化C值范围(1, 10, 20)
+    'stacked__svm__epsilon': np.linspace(0.01, 0.1, 10),  # 使用更多点以细化epsilon值范围
+    'stacked__svm__gamma': [1, 10] ,# gamma的更细化取值范围['scale', 'auto'] + np.logspace(-3, 1, 5).tolist()
+    'stacked__rf__n_estimators':[100]
 }
 
 # 使用GridSearchCV进行超参数搜索
