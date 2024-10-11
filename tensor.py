@@ -9,19 +9,18 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import matplotlib.pyplot as plt
-import seaborn as sns
 import keras_tuner as kt
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 from kerastuner import HyperParameters, Objective
 from kerastuner import Hyperband
 
-# -------------------- 固定随机种子以确保可复现性 --------------------
+# 固定随机种子以确保可复现性
 SEED = 42
 os.environ['PYTHONHASHSEED'] = str(SEED)
 random.seed(SEED)
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
+# 数据读取和预处理
 # -------------------- 数据读取和预处理 --------------------
 
 # 定义文件路径和参数
@@ -99,48 +98,42 @@ print("缩放后的训练集是否包含无穷值:", np.isinf(X_train_scaled).an
 print("缩放后的测试集是否包含 NaN:", np.isnan(X_test_scaled).any())
 print("缩放后的测试集是否包含无穷值:", np.isinf(X_test_scaled).any())
 
-# -------------------- 定义超模型函数 --------------------
+
+# 定义超模型函数
 def build_model(hp):
     model = models.Sequential()
     model.add(layers.Input(shape=(X_train_scaled.shape[1],)))
 
-    # 调整隐藏层数量
     for i in range(hp.Int('num_layers', 1, 3)):
-        # 调整每层的神经元数量
         units = hp.Int(f'units_{i}', min_value=32, max_value=256, step=32)
         model.add(layers.Dense(units, activation='relu', 
                                kernel_regularizer=regularizers.l2(
                                    hp.Choice('l2_' + str(i), values=[1e-4, 1e-3, 1e-2]))))
         model.add(layers.BatchNormalization())
-        # 可选的Dropout层
         dropout_rate = hp.Float(f'dropout_{i}', min_value=0.0, max_value=0.5, step=0.1)
         if dropout_rate > 0.0:
             model.add(layers.Dropout(dropout_rate))
     
-    # 输出层
-    model.add(layers.Dense(1))  # 回归任务，无激活函数
+    model.add(layers.Dense(1))  # 回归任务
 
-    # 调整学习率
     learning_rate = hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])
-
     optimizer = keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0)
 
-    # 自定义 RMSE 指标
+    # 定义 RMSE 指标
     def rmse(y_true, y_pred):
         return tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
 
     model.compile(optimizer=optimizer,
                   loss='mse',
-                  metrics=['mae', rmse])
+                  metrics=[keras.metrics.MeanAbsoluteError(), rmse])
 
     return model
 
-# -------------------- 设置 Keras Tuner 并执行网格搜索 --------------------
-# 初始化 Keras Tuner 的 GridSearch
+# 设置 Keras Tuner 并执行网格搜索
 tuner = kt.GridSearch(
     build_model,
-    objective=Objective("val_root_mean_squared_error", direction="min"),
-    max_trials=1,  # GridSearch 会自动遍历所有参数组合，所以 max_trials=1
+    objective=Objective("val_rmse", direction="min"),  # 确保这里使用正确的 RMSE 名称
+    max_trials=1,
     directory='my_dir',
     project_name='grid_search_nn',
     overwrite=True,
@@ -170,11 +163,9 @@ for i in range(best_hps.get('num_layers')):
     print(f"第 {i+1} 层的 Dropout 率: {best_hps.get(f'dropout_{i}')}")
 print(f"学习率: {best_hps.get('learning_rate')}")
 
-# -------------------- 构建并训练最佳模型 --------------------
-# 构建最佳模型
+# 构建并训练最佳模型
 model = tuner.hypermodel.build(best_hps)
 
-# 训练最佳模型
 history = model.fit(
     X_train_scaled, y_train_scaled,
     epochs=100,
@@ -186,7 +177,6 @@ history = model.fit(
     ]
 )
 
-# -------------------- 评估最佳模型 --------------------
 # 在测试集上评估模型
 test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
 print('\n测试集的均方误差 (MSE):', test_loss)
@@ -201,7 +191,7 @@ y_true_original = y_test.values.reshape(-1, 1)
 for i in range(5):
     print(f"实际值: {y_true_original[i][0]:.4f}, 预测值: {predictions_original[i][0]:.4f}")
 
-# -------------------- 可视化训练过程 --------------------
+# 可视化训练过程
 plt.figure(figsize=(18, 5))
 
 # 损失（MSE）
@@ -233,4 +223,3 @@ plt.legend()
 
 plt.tight_layout()
 plt.show()
-
