@@ -108,7 +108,7 @@ def build_model(hp):
 tuner = kt.BayesianOptimization(
     build_model,
     objective=Objective("val_rmse", direction="min"),
-    max_trials=20,  # 减少试验次数
+    max_trials=10,  # 减少试验次数
     directory='my_dir',
     project_name='bayesian_search_nn_optimized',
     overwrite=True,
@@ -118,14 +118,14 @@ tuner = kt.BayesianOptimization(
 # 定义回调函数
 callbacks = [
     keras.callbacks.EarlyStopping(monitor='val_rmse', patience=5, restore_best_weights=True, mode='min'),  # 缩短耐心值
-    keras.callbacks.TerminateOnNaN(),
-    keras.callbacks.ReduceLROnPlateau(monitor='val_rmse', factor=0.5, patience=3, min_lr=1e-6)  # 添加学习率调度
+    keras.callbacks.ReduceLROnPlateau(monitor='val_rmse', factor=0.5, patience=3, min_lr=1e-6),          # 添加学习率调度
+    keras.callbacks.TerminateOnNaN()
 ]
 
 # 执行超参数搜索
 tuner.search(
     X_train_scaled, y_train_scaled,
-    epochs=100,  # 减少训练轮数
+    epochs=50,        # 减少训练轮数
     batch_size=32,
     validation_split=0.2,
     callbacks=callbacks
@@ -147,7 +147,7 @@ print(f"学习率: {best_hps.get('learning_rate')}")
 model = tuner.hypermodel.build(best_hps)
 history = model.fit(
     X_train_scaled, y_train_scaled,
-    epochs=100,  # 保持一致
+    epochs=50,        # 保持一致
     batch_size=32,
     validation_split=0.2,
     callbacks=callbacks
@@ -157,3 +157,18 @@ history = model.fit(
 test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
 print('模型评估的均方误差 (MSE):', test_loss)
 print('模型评估的均方根误差 (RMSE):', test_rmse)
+
+# 反标准化和反对数转换
+y_pred = model.predict(X_test_scaled)
+y_pred_unscaled = y_scaler.inverse_transform(y_pred)
+y_test_unscaled = y_scaler.inverse_transform(y_test_scaled)
+
+y_pred_original = np.exp(y_pred_unscaled)
+y_test_original = np.exp(y_test_unscaled)
+
+# 评估原始空间
+mse_original = mean_squared_error(y_test_original, y_pred_original)
+rmse_original = np.sqrt(mse_original)
+r2_original = r2_score(y_test_original, y_pred_original)
+
+print(f'原始空间 - MSE: {mse_original}, RMSE: {rmse_original}, R2: {r2_original}')
