@@ -36,7 +36,7 @@ df = pd.read_csv(os.path.join(FILEPATH, f"{Sector}.csv"))
 df["Market Cap(M)"] = np.log(df["Market Cap(M)"].replace(0, np.nan))
 
 # 删除包含NaN的行（如果有的话）
-df = df.dropna(subset=["Market Cap(M)"])
+#df = df.dropna(subset=["Market Cap(M)"])
 
 # 目标变量
 y = df["Market Cap(M)"]
@@ -98,42 +98,48 @@ print("缩放后的训练集是否包含无穷值:", np.isinf(X_train_scaled).an
 print("缩放后的测试集是否包含 NaN:", np.isnan(X_test_scaled).any())
 print("缩放后的测试集是否包含无穷值:", np.isinf(X_test_scaled).any())
 
-
-# 定义超模型函数
+# -------------------- 定义超模型函数 --------------------
 def build_model(hp):
     model = models.Sequential()
     model.add(layers.Input(shape=(X_train_scaled.shape[1],)))
 
-    for i in range(hp.Int('num_layers', 1, 3)):
-        units = hp.Int(f'units_{i}', min_value=32, max_value=256, step=32)
+    # 调整隐藏层数量
+    for i in range(hp.Int('num_layers', 1, 5)):  # 增加层数范围
+        # 调整每层的神经元数量
+        units = hp.Int(f'units_{i}', min_value=32, max_value=512, step=32)  # 增加神经元数量范围
         model.add(layers.Dense(units, activation='relu', 
                                kernel_regularizer=regularizers.l2(
                                    hp.Choice('l2_' + str(i), values=[1e-4, 1e-3, 1e-2]))))
         model.add(layers.BatchNormalization())
+        # 可选的Dropout层
         dropout_rate = hp.Float(f'dropout_{i}', min_value=0.0, max_value=0.5, step=0.1)
         if dropout_rate > 0.0:
             model.add(layers.Dropout(dropout_rate))
     
-    model.add(layers.Dense(1))  # 回归任务
+    # 输出层
+    model.add(layers.Dense(1))  # 回归任务，无激活函数
 
-    learning_rate = hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])
+    # 调整学习率
+    learning_rate = hp.Float('learning_rate', min_value=1e-5, max_value=1e-2, sampling='LOG')  # 采用对数采样
+
     optimizer = keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0)
 
-    # 定义 RMSE 指标
+    # 自定义 RMSE 指标
     def rmse(y_true, y_pred):
         return tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
 
     model.compile(optimizer=optimizer,
                   loss='mse',
-                  metrics=[keras.metrics.MeanAbsoluteError(), rmse])
+                  metrics=[rmse])  # 仅需训练RMSE, 还需指定val_rmse来用于KerasTuner
 
     return model
 
-# 设置 Keras Tuner 并执行网格搜索
+# -------------------- 设置 Keras Tuner 并执行网格搜索 --------------------
+# 初始化 Keras Tuner 的 GridSearch
 tuner = kt.GridSearch(
     build_model,
-    objective=Objective("val_rmse", direction="min"),  # 确保这里使用正确的 RMSE 名称
-    max_trials=1,
+    objective=Objective("val_loss", direction="min"),  # 这里可以使用val_loss
+    max_trials=10,  # 增加尝试次数以探索更多超参数组合
     directory='my_dir',
     project_name='grid_search_nn',
     overwrite=True,
@@ -143,7 +149,7 @@ tuner = kt.GridSearch(
 # 执行超参数搜索
 tuner.search(
     X_train_scaled, y_train_scaled,
-    epochs=100,
+    epochs=100,  # 增加训练轮次
     batch_size=32,
     validation_split=0.2,
     callbacks=[
@@ -163,12 +169,14 @@ for i in range(best_hps.get('num_layers')):
     print(f"第 {i+1} 层的 Dropout 率: {best_hps.get(f'dropout_{i}')}")
 print(f"学习率: {best_hps.get('learning_rate')}")
 
-# 构建并训练最佳模型
+# -------------------- 构建并训练最佳模型 --------------------
+# 构建最佳模型
 model = tuner.hypermodel.build(best_hps)
 
+# 训练最佳模型
 history = model.fit(
     X_train_scaled, y_train_scaled,
-    epochs=100,
+    epochs=200,  # 增加训练轮次
     batch_size=32,
     validation_split=0.2,
     callbacks=[
@@ -177,10 +185,10 @@ history = model.fit(
     ]
 )
 
+# -------------------- 评估最佳模型 --------------------
 # 在测试集上评估模型
-test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
+test_loss, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
 print('\n测试集的均方误差 (MSE):', test_loss)
-print('测试集的平均绝对误差 (MAE):', test_mae)
 print('测试集的均方根误差 (RMSE):', test_rmse)
 
 # 预测并反标准化
@@ -191,7 +199,7 @@ y_true_original = y_test.values.reshape(-1, 1)
 for i in range(5):
     print(f"实际值: {y_true_original[i][0]:.4f}, 预测值: {predictions_original[i][0]:.4f}")
 
-# 可视化训练过程
+# -------------------- 可视化训练过程 --------------------
 plt.figure(figsize=(18, 5))
 
 # 损失（MSE）
@@ -203,17 +211,8 @@ plt.ylabel('均方误差 (MSE)')
 plt.title('训练和验证损失')
 plt.legend()
 
-# 平均绝对误差 (MAE)
-plt.subplot(1, 3, 2)
-plt.plot(history.history['mae'], label='训练 MAE')
-plt.plot(history.history['val_mae'], label='验证 MAE')
-plt.xlabel('Epoch')
-plt.ylabel('平均绝对误差 (MAE)')
-plt.title('训练和验证 MAE')
-plt.legend()
-
 # 均方根误差 (RMSE)
-plt.subplot(1, 3, 3)
+plt.subplot(1, 3, 2)
 plt.plot(history.history['rmse'], label='训练 RMSE')
 plt.plot(history.history['val_rmse'], label='验证 RMSE')
 plt.xlabel('Epoch')
