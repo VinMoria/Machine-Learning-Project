@@ -23,7 +23,7 @@
             "Cash Cash Equivalents And Short Term Investments",
             "Working Capital"
         ],
-        "RMSE": 1.067480230778059
+        "RMSE": 0.8245689102462253
     },
     {
         "Sector": "Basic Materials",
@@ -49,7 +49,7 @@
             "Duefrom Related Parties Current",
             "Diluted Average Shares"
         ],
-        "RMSE": 0.8567947445129969
+        "RMSE": 0.5416236378491035
     },
     {
         "Sector": "Financial",
@@ -75,7 +75,7 @@
             "Treasury Stock",
             "Total Capitalization"
         ],
-        "RMSE": 0.7354604385710147
+        "RMSE": 0.5479711468074538
     },
     {
         "Sector": "Consumer Defensive",
@@ -101,7 +101,7 @@
             "Sale Of Investment",
             "Other Inventories"
         ],
-        "RMSE": 1.0234468224096347
+        "RMSE": 0.7056924856346076
     },
     {
         "Sector": "Industrials",
@@ -127,7 +127,7 @@
             "Commercial Paper",
             "Proceeds From Stock Option Exercised"
         ],
-        "RMSE": 0.889775190132266
+        "RMSE": 0.6173433180440704
     },
     {
         "Sector": "Technology",
@@ -153,7 +153,7 @@
             "Selling General And Administration",
             "Earnings From Equity Interest Net Of Tax"
         ],
-        "RMSE": 1.277877789819556
+        "RMSE": 0.7761305141780255
     },
     {
         "Sector": "Consumer Cyclical",
@@ -179,7 +179,7 @@
             "Investments And Advances",
             "Working Capital"
         ],
-        "RMSE": 1.1981758080096876
+        "RMSE": 0.7085800029596223
     },
     {
         "Sector": "Real Estate",
@@ -205,7 +205,7 @@
             "Other Payable",
             "Stockholders Equity"
         ],
-        "RMSE": 0.7598035951322487
+        "RMSE": 0.47292261050672224
     },
     {
         "Sector": "Communication Services",
@@ -231,7 +231,7 @@
             "Net Issuance Payments Of Debt",
             "Buildings And Improvements"
         ],
-        "RMSE": 1.2444596839556332
+        "RMSE": 0.74633350120689
     },
     {
         "Sector": "Energy",
@@ -257,7 +257,7 @@
             "Other Current Assets",
             "General And Administrative Expense"
         ],
-        "RMSE": 0.8848632113931386
+        "RMSE": 0.5026972979972304
     },
     {
         "Sector": "Utilities",
@@ -283,6 +283,6 @@
             "Invested Capital",
             "Other Receivables"
         ],
-        "RMSE": 0.9529548119292498
+        "RMSE": 0.5218024272712326
     }
 ]
