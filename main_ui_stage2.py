@@ -93,7 +93,7 @@ def onclick_submit():
 		with open(f"{MODEL_PATH}{chosen_sector}.ml", "rb") as f:
 			model = pickle.load(f)
 		# predict value
-		res_valuation = model.predict(np.array([input_feature_list]))[0]
+		res_valuation = np.exp(model.predict(np.array([input_feature_list])))[0]
 		print(res_valuation)
 
 		# write to excel
@@ -134,7 +134,7 @@ def onclick_submit():
 		image_path = 'result_excel/wordcloud.png'
 		wordcloud.to_file(image_path)
 		img = Image(image_path)
-		sheet2.add_image(img, 'D5')
+		sheet2.add_image(img, 'D3')
 
 		filename = "result_excel\\valuAItion_result_"+time.strftime('%Y-%m-%d_%H%M%S', time.localtime())+".xlsx"
 		workbook.save(filename)
