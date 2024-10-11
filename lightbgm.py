@@ -26,7 +26,7 @@ def train_lightBGM_for_sector(Sector):
     # 处理“Market Cap(M)”列：替换0为NaN，然后取自然对数
     df["Market Cap(M)"] = df["Market Cap(M)"].replace(0, np.nan)
     df["Market Cap(M)"] = np.log(df["Market Cap(M)"])
-    #df["Market Cap(M)"].fillna(df["Market Cap(M)"].mean(), inplace=True)  # 填补NaN
+   
 
     # 目标变量
     y = df["Market Cap(M)"]
@@ -78,7 +78,7 @@ def train_lightBGM_for_sector(Sector):
         scoring='neg_mean_squared_error',
         cv=3,  # 交叉验证折数
         verbose=1,
-        random_state=SEED,
+        random_state=42,
         n_jobs=-1
     )
 
