@@ -39,7 +39,7 @@ def gen_entry_for_sector(event):
 	destroy_entry_for_sector()
 	# read features for the sector from json file
 	chosen_sector = sector_entry.get()
-	with open("res.json", "r") as f:
+	with open("./res.json", "r") as f:
 		model_list = json.load(f)
 	for model_dict in model_list:
 		if model_dict["Sector"] == chosen_sector:
