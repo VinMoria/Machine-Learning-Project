@@ -94,7 +94,7 @@ def train_svm_model(Sector):
     return res_dict
 
 
-
+##
 # ==================  main start  ==================
 # 清空SVM_model下的文件
 folder_path = "SVM_model"
