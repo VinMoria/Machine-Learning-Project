@@ -7,6 +7,10 @@ import os
 import subprocess
 import platform
 import time
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from wordcloud import WordCloud
+import sentiment
 
 
 def fetch_and_analyze_company(stock_code):
@@ -23,17 +27,18 @@ def fetch_and_analyze_company(stock_code):
 
 def create_excel_with_analysis(stock_code, df, info): # "info" contains detailed data related to the stock.
     current_dir = os.getcwd()  # use os.getcwd() to get the current working directory and save the file
-    filename = os.path.join(current_dir, f"{stock_code}_financial_report.xlsx") # generate the full path and filename of the Excel file
+    filename = os.path.join(current_dir, f"financial_report/{stock_code}_financial_report.xlsx") # generate the full path and filename of the Excel file
   
     with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
         df.to_excel(writer, sheet_name="Historical Data") # Write the Historical Data df of the stock to the "Historical Data" worksheet in the Excel file.
-        plot_data(df, writer, "Historical Data")  # Plot the stock price trend and put it into the "Historical Data" worksheet in the Excel file.
+        plot_data(df, writer, "Historical Data", stock_code)  # Plot the stock price trend and put it into the "Historical Data" worksheet in the Excel file.
         insert_integrated_data(writer, info, "Integrated Data") # Write the financial data of the stock (such as PE ratio, profit margin, etc.) into the Integrated Data worksheet.
         insert_additional_data(writer, info, "Financial Report") # Write the company's Financial reporting information (such as dividend yield, earnings per share growth, etc.) into the Financial Report worksheet.
         insert_earnings_calendar(writer, stock_code, "Earnings Calendar") # Write the company's next Earnings date to the Earnings Calendar worksheet.
         insert_executive_team(writer, info, "Executive Team") # Write information about the company's Executive Team(name and title), into the Executive Team worksheet.
         insert_related_news(writer, stock_code, "Related News") # Fill in the Executive team worksheet with information about the company's executive team, such as name and title.
-        
+        insert_sentiment_analysis(writer, stock_code, "Sentiment")
+
     open_excel_file(filename)
     return filename
 
@@ -92,13 +97,13 @@ def insert_integrated_data(writer, info, sheet_name):
         row += 1  # This line adds the empty row
 
 
-def plot_data(df, writer, sheet_name): # Plot the closing price trend of a stock
+def plot_data(df, writer, sheet_name, stock_code): # Plot the closing price trend of a stock
     fig, ax = plt.subplots(figsize=(10, 5))
     df['Close'].plot(ax=ax)
     ax.set_title("Stock Price Trend")
     ax.set_xlabel("Date")
     ax.set_ylabel("Close Price")
-    chart_path = 'plot.png'
+    chart_path = f"financial_report/{stock_code}_stock_plot.png"
     fig.savefig(chart_path)
     plt.close(fig)
     writer.sheets[sheet_name].insert_image('G1', chart_path)
@@ -247,7 +252,34 @@ def insert_related_news(writer, stock_code, sheet_name):
     else:
         worksheet.write('A2', 'No news found.')
 
-        
-        
+
+def insert_sentiment_analysis(writer, stock_code, sheet_name):
+    workbook = writer.book
+    worksheet = workbook.add_worksheet(sheet_name)
+    writer.sheets[sheet_name] = worksheet
+
+    # get the current date and the date one month ago
+    current_date = datetime.now()
+    current_year_month_day = current_date.strftime('%Y-%m-%d')
+    one_month_ago = current_date - relativedelta(months=1)
+    one_month_ago_year_month_day = one_month_ago.strftime('%Y-%m-%d')
+
+    # call the function in sentiment.py
+    sentiment_score, long_text = sentiment.get_stock_sentiment(stock_code, one_month_ago_year_month_day, current_year_month_day)
+
+    worksheet.write('A1', 'Sentiment in Last 1 Month')
+    worksheet.write('B1', str(sentiment_score))
+    worksheet.write('A2', 'From')
+    worksheet.write('B2', one_month_ago_year_month_day)
+    worksheet.write('A3', 'To')
+    worksheet.write('B3', current_year_month_day)
+
+    # word cloud
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(long_text)
+    image_path = f"financial_report/{stock_code}_wordcloud.png"
+    wordcloud.to_file(image_path)
+    worksheet.insert_image('D3', image_path)
+
+
 if __name__ == "__main__":
     user_interaction()
