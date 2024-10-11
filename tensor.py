@@ -104,14 +104,12 @@ def build_model(hp):
     model.add(layers.Input(shape=(X_train_scaled.shape[1],)))
 
     # 调整隐藏层数量
-    for i in range(hp.Int('num_layers', 1, 5)):  # 增加层数范围
-        # 调整每层的神经元数量
-        units = hp.Int(f'units_{i}', min_value=32, max_value=512, step=32)  # 增加神经元数量范围
-        model.add(layers.Dense(units, activation='relu', 
+    for i in range(hp.Int('num_layers', 1, 3)):
+        units = hp.Int(f'units_{i}', min_value=32, max_value=128, step=32)  # 减少神经元范围
+        model.add(layers.Dense(units, activation='relu',
                                kernel_regularizer=regularizers.l2(
                                    hp.Choice('l2_' + str(i), values=[1e-4, 1e-3, 1e-2]))))
         model.add(layers.BatchNormalization())
-        # 可选的Dropout层
         dropout_rate = hp.Float(f'dropout_{i}', min_value=0.0, max_value=0.5, step=0.1)
         if dropout_rate > 0.0:
             model.add(layers.Dropout(dropout_rate))
@@ -120,7 +118,7 @@ def build_model(hp):
     model.add(layers.Dense(1))  # 回归任务，无激活函数
 
     # 调整学习率
-    learning_rate = hp.Float('learning_rate', min_value=1e-5, max_value=1e-2, sampling='LOG')  # 采用对数采样
+    learning_rate = hp.Choice('learning_rate', values=[1e-5, 1e-6])  # 使用更小的学习率
 
     optimizer = keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=1.0)
 
@@ -130,7 +128,7 @@ def build_model(hp):
 
     model.compile(optimizer=optimizer,
                   loss='mse',
-                  metrics=[rmse])  # 仅需训练RMSE, 还需指定val_rmse来用于KerasTuner
+                  metrics=['mae', rmse])
 
     return model
 
@@ -187,9 +185,13 @@ history = model.fit(
 
 # -------------------- 评估最佳模型 --------------------
 # 在测试集上评估模型
-test_loss, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
+# -------------------- 评估最佳模型 --------------------
+# 在测试集上评估模型
+test_loss, test_mae, test_rmse = model.evaluate(X_test_scaled, y_test_scaled, verbose=2)
 print('\n测试集的均方误差 (MSE):', test_loss)
+print('测试集的平均绝对误差 (MAE):', test_mae)
 print('测试集的均方根误差 (RMSE):', test_rmse)
+
 
 # 预测并反标准化
 predictions_scaled = model.predict(X_test_scaled[:5])
