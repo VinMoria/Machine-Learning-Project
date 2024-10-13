@@ -127,7 +127,7 @@ def train_lightGBM_for_sector(Sector):
 
 
 # ==================  main start  ==================
-# 清空XGBoost_model下的文件
+# 清空lightGBM_model下的文件
 folder_path = "lightGBM_model"
 for filename in os.listdir(folder_path):
 	file_path = os.path.join(folder_path, filename)

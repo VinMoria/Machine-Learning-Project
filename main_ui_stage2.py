@@ -19,6 +19,8 @@ feature_entry_list = []
 entry_save_dict = {}
 sector_feature_list = []
 chosen_sector = ""
+use_model = ""
+rmse = ""
 
 MODEL_PATH = "best_model/"
 
@@ -34,8 +36,7 @@ def destroy_entry_for_sector():
 
 
 def gen_entry_for_sector(event):
-	global sector_feature_list
-	global chosen_sector
+	global sector_feature_list, use_model, rmse, chosen_sector
 	destroy_entry_for_sector()
 	# read features for the sector from json file
 	chosen_sector = sector_entry.get()
@@ -44,6 +45,8 @@ def gen_entry_for_sector(event):
 	for model_dict in model_list:
 		if model_dict["Sector"] == chosen_sector:
 			sector_feature_list = model_dict["Features"]
+			use_model = model_dict["model"]
+			rmse = model_dict["RMSE"]
 			break
 
 	# generate labels and entry for feature
@@ -114,6 +117,12 @@ def onclick_submit():
 
 		sheet1["C1"] = "Valuation Result(M)"
 		sheet1["D1"] = str(res_valuation)
+
+		sheet1["C2"] = "Model"
+		sheet1["D2"] = use_model
+
+		sheet1["C3"] = "RMSE"
+		sheet1["D3"] = str(rmse)
 
 		# sentiment
 		sheet2 = workbook.create_sheet(title="Sentiment")

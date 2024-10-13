@@ -51,7 +51,7 @@ for sector in SECTOR_LIST: # 遍历sector
 		if sector_dict["RMSE"] < min_rmse:
 			min_index = index
 			min_rmse = sector_dict["RMSE"]
-
+	sector_list_from_all_model[min_index]["model"] = MODEL_PATH_LIST[min_index].split("_")[0]
 	best_model_list_for_json.append(sector_list_from_all_model[min_index])
 	# TODO 复制model文件到best_model中
 	shutil.copy(f"{MODEL_PATH_LIST[min_index]}{sector}.ml", f"{BEST_MODEL_PATH}{sector}.ml")

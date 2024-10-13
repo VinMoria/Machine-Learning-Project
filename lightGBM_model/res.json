@@ -23,8 +23,7 @@
             "Cash Cash Equivalents And Short Term Investments",
             "Working Capital"
         ],
-        "RMSE": 0.6776208552029391,
-        "model": "lightGBM"
+        "RMSE": 0.6776208552029391
     },
     {
         "Sector": "Basic Materials",
@@ -50,8 +49,7 @@
             "Duefrom Related Parties Current",
             "Diluted Average Shares"
         ],
-        "RMSE": 0.4598335939010214,
-        "model": "lightGBM"
+        "RMSE": 0.4598335939010214
     },
     {
         "Sector": "Financial",
@@ -77,8 +75,7 @@
             "Treasury Stock",
             "Total Capitalization"
         ],
-        "RMSE": 0.3289885003117527,
-        "model": "lightGBM"
+        "RMSE": 0.3289885003117527
     },
     {
         "Sector": "Consumer Defensive",
@@ -104,8 +101,7 @@
             "Sale Of Investment",
             "Other Inventories"
         ],
-        "RMSE": 0.5674762430888379,
-        "model": "lightGBM"
+        "RMSE": 0.5674762430888379
     },
     {
         "Sector": "Industrials",
@@ -131,8 +127,7 @@
             "Commercial Paper",
             "Proceeds From Stock Option Exercised"
         ],
-        "RMSE": 0.5973305842697829,
-        "model": "lightGBM"
+        "RMSE": 0.5973305842697829
     },
     {
         "Sector": "Technology",
@@ -158,8 +153,7 @@
             "Selling General And Administration",
             "Earnings From Equity Interest Net Of Tax"
         ],
-        "RMSE": 0.6581550720768532,
-        "model": "lightGBM"
+        "RMSE": 0.6581550720768532
     },
     {
         "Sector": "Consumer Cyclical",
@@ -185,8 +179,7 @@
             "Investments And Advances",
             "Working Capital"
         ],
-        "RMSE": 0.4786817768160059,
-        "model": "lightGBM"
+        "RMSE": 0.4786817768160059
     },
     {
         "Sector": "Real Estate",
@@ -212,8 +205,7 @@
             "Other Payable",
             "Stockholders Equity"
         ],
-        "RMSE": 0.35821988784989706,
-        "model": "lightGBM"
+        "RMSE": 0.35821988784989706
     },
     {
         "Sector": "Communication Services",
@@ -239,8 +231,7 @@
             "Net Issuance Payments Of Debt",
             "Buildings And Improvements"
         ],
-        "RMSE": 0.598437940433365,
-        "model": "XGBoost"
+        "RMSE": 0.6174591686980795
     },
     {
         "Sector": "Energy",
@@ -266,8 +257,7 @@
             "Other Current Assets",
             "General And Administrative Expense"
         ],
-        "RMSE": 0.3167048473560452,
-        "model": "lightGBM"
+        "RMSE": 0.3167048473560452
     },
     {
         "Sector": "Utilities",
@@ -293,7 +283,6 @@
             "Invested Capital",
             "Other Receivables"
         ],
-        "RMSE": 0.33062873172547536,
-        "model": "XGBoost"
+        "RMSE": 0.38940391408270075
     }
 ]
