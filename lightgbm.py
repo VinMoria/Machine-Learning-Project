@@ -19,7 +19,7 @@ FEATURE_SELECT_TOP = 20
 
 
 
-def train_lightBGM_for_sector(Sector):
+def train_lightGBM_for_sector(Sector):
     # 读取主数据集
     df = pd.read_csv(os.path.join(FILEPATH, f"{Sector}.csv"))
 
@@ -113,7 +113,7 @@ def train_lightBGM_for_sector(Sector):
     
     # 保存模型
     saved_filename = f"{Sector}.ml"
-    with open(f"lightBGM_model/{saved_filename}", "wb") as f:
+    with open(f"lightGBM_model/{saved_filename}", "wb") as f:
         pickle.dump(best_lgb_reg, f)
     print(f"save file: {saved_filename}")
 
@@ -128,7 +128,7 @@ def train_lightBGM_for_sector(Sector):
 
 # ==================  main start  ==================
 # 清空XGBoost_model下的文件
-folder_path = "lightBGM_model"
+folder_path = "lightGBM_model"
 for filename in os.listdir(folder_path):
 	file_path = os.path.join(folder_path, filename)
 	if os.path.isfile(file_path):
@@ -151,7 +151,7 @@ sector_list = [
 res_dict_list = []
 for sector in sector_list:
 	print(f"=============== {sector} start ===============")
-	res_dict_list.append(train_lightBGM_for_sector(sector))
+	res_dict_list.append(train_lightGBM_for_sector(sector))
 
-with open(f'lightBGM_model/res.json', 'w') as f:
+with open(f'lightGBM_model/res.json', 'w') as f:
     json.dump(res_dict_list, f, indent=4)

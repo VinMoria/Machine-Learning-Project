@@ -132,5 +132,5 @@ for sector in sector_list:
 	print(f"=============== {sector} start ===============")
 	res_dict_list.append(train_XGBoost_for_sector(sector))
 
-with open(f'XGBoost_model/res.json', 'wb') as f:
+with open(f'XGBoost_model/res.json', 'w') as f:
     json.dump(res_dict_list, f, indent=4)

@@ -20,7 +20,7 @@ entry_save_dict = {}
 sector_feature_list = []
 chosen_sector = ""
 
-MODEL_PATH = "XGBoost_model/"
+MODEL_PATH = "best_model/"
 
 def destroy_entry_for_sector():
 	global feature_label_list, feature_entry_list
@@ -39,7 +39,7 @@ def gen_entry_for_sector(event):
 	destroy_entry_for_sector()
 	# read features for the sector from json file
 	chosen_sector = sector_entry.get()
-	with open("./res.json", "r") as f:
+	with open(f"{MODEL_PATH}res.json", "r") as f:
 		model_list = json.load(f)
 	for model_dict in model_list:
 		if model_dict["Sector"] == chosen_sector:

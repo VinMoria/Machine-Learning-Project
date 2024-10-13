@@ -23,7 +23,7 @@
             "Cash Cash Equivalents And Short Term Investments",
             "Working Capital"
         ],
-        "RMSE": 0.7230670112250848
+        "RMSE": 0.6776208552029391
     },
     {
         "Sector": "Basic Materials",
@@ -49,7 +49,7 @@
             "Duefrom Related Parties Current",
             "Diluted Average Shares"
         ],
-        "RMSE": 0.46996772468357606
+        "RMSE": 0.4598335939010214
     },
     {
         "Sector": "Financial",
@@ -75,7 +75,7 @@
             "Treasury Stock",
             "Total Capitalization"
         ],
-        "RMSE": 0.3341299134874415
+        "RMSE": 0.3289885003117527
     },
     {
         "Sector": "Consumer Defensive",
@@ -101,7 +101,7 @@
             "Sale Of Investment",
             "Other Inventories"
         ],
-        "RMSE": 0.6148155415894985
+        "RMSE": 0.5674762430888379
     },
     {
         "Sector": "Industrials",
@@ -127,7 +127,7 @@
             "Commercial Paper",
             "Proceeds From Stock Option Exercised"
         ],
-        "RMSE": 0.5980125578335095
+        "RMSE": 0.5973305842697829
     },
     {
         "Sector": "Technology",
@@ -153,7 +153,7 @@
             "Selling General And Administration",
             "Earnings From Equity Interest Net Of Tax"
         ],
-        "RMSE": 0.698517999578025
+        "RMSE": 0.6581550720768532
     },
     {
         "Sector": "Consumer Cyclical",
@@ -179,7 +179,7 @@
             "Investments And Advances",
             "Working Capital"
         ],
-        "RMSE": 0.5214143184644208
+        "RMSE": 0.4786817768160059
     },
     {
         "Sector": "Real Estate",
@@ -205,7 +205,7 @@
             "Other Payable",
             "Stockholders Equity"
         ],
-        "RMSE": 0.36537976351497137
+        "RMSE": 0.35821988784989706
     },
     {
         "Sector": "Communication Services",
@@ -257,7 +257,7 @@
             "Other Current Assets",
             "General And Administrative Expense"
         ],
-        "RMSE": 0.3271935766399083
+        "RMSE": 0.3167048473560452
     },
     {
         "Sector": "Utilities",
