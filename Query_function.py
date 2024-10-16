@@ -11,7 +11,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from wordcloud import WordCloud
 import sentiment
-
+MODEL_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def fetch_and_analyze_company(stock_code):
     stock = yf.Ticker(stock_code)
@@ -27,7 +27,7 @@ def fetch_and_analyze_company(stock_code):
 
 def create_excel_with_analysis(stock_code, df, info): # "info" contains detailed data related to the stock.
     current_dir = os.getcwd()  # use os.getcwd() to get the current working directory and save the file
-    filename = os.path.join(current_dir, f"financial_report/{stock_code}_financial_report.xlsx") # generate the full path and filename of the Excel file
+    filename = os.path.join(current_dir, f"{MODEL_PATH}/financial_report/{stock_code}_financial_report.xlsx") # generate the full path and filename of the Excel file
   
     with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
         df.to_excel(writer, sheet_name="Historical Data") # Write the Historical Data df of the stock to the "Historical Data" worksheet in the Excel file.
@@ -103,7 +103,7 @@ def plot_data(df, writer, sheet_name, stock_code): # Plot the closing price tren
     ax.set_title("Stock Price Trend")
     ax.set_xlabel("Date")
     ax.set_ylabel("Close Price")
-    chart_path = f"financial_report/{stock_code}_stock_plot.png"
+    chart_path = f"{MODEL_PATH}/financial_report/{stock_code}_stock_plot.png"
     fig.savefig(chart_path)
     plt.close(fig)
     writer.sheets[sheet_name].insert_image('G1', chart_path)
@@ -276,7 +276,7 @@ def insert_sentiment_analysis(writer, stock_code, sheet_name):
 
     # word cloud
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(long_text)
-    image_path = f"financial_report/{stock_code}_wordcloud.png"
+    image_path = f"{MODEL_PATH}/financial_report/{stock_code}_wordcloud.png"
     wordcloud.to_file(image_path)
     worksheet.insert_image('D3', image_path)
 
