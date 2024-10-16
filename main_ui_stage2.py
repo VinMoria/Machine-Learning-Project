@@ -22,7 +22,7 @@ chosen_sector = ""
 use_model = ""
 rmse = ""
 
-MODEL_PATH = "best_model/"
+MODEL_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def destroy_entry_for_sector():
 	global feature_label_list, feature_entry_list
@@ -40,7 +40,7 @@ def gen_entry_for_sector(event):
 	destroy_entry_for_sector()
 	# read features for the sector from json file
 	chosen_sector = sector_entry.get()
-	with open(f"{MODEL_PATH}res.json", "r") as f:
+	with open(f"{MODEL_PATH}\\best_model\\res.json", "r") as f:
 		model_list = json.load(f)
 	for model_dict in model_list:
 		if model_dict["Sector"] == chosen_sector:
@@ -93,7 +93,7 @@ def onclick_submit():
 				input_feature_list.append(float(entry_save_dict[feature]))
 
 		# load model
-		with open(f"{MODEL_PATH}{chosen_sector}.ml", "rb") as f:
+		with open(f"{MODEL_PATH}\\best_model\\{chosen_sector}.ml", "rb") as f:
 			model = pickle.load(f)
 		# predict value
 		res_valuation = np.exp(model.predict(np.array([input_feature_list])))[0]
@@ -140,12 +140,12 @@ def onclick_submit():
 
 		# word Cloud
 		wordcloud = WordCloud(width=800, height=400, background_color='white').generate(long_text)
-		image_path = 'result_excel/wordcloud.png'
+		image_path = f'{MODEL_PATH}\\result_excel\\wordcloud.png'
 		wordcloud.to_file(image_path)
 		img = Image(image_path)
 		sheet2.add_image(img, 'D3')
 
-		filename = "result_excel\\valuAItion_result_"+time.strftime('%Y-%m-%d_%H%M%S', time.localtime())+".xlsx"
+		filename = f"{MODEL_PATH}\\result_excel\\valuAItion_result_"+time.strftime('%Y-%m-%d_%H%M%S', time.localtime())+".xlsx"
 		workbook.save(filename)
 		time.sleep(1)
 		print(f"Successfully write into {filename}")
