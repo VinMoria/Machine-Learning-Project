@@ -1,1 +1,0 @@
-Python "C:\Users\HCZ\Desktop\ntu ba\第一学期\3 AN6002 Analytics and Machine Learning in Business\group project\final\github file\Machine-Learning-Project\search_company.py"
