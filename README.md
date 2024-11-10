@@ -8,6 +8,7 @@ demo的逻辑：如果执行demo，只需要进行第5和第6步
 5. 执行valuation_function.py，根据输入的行业在best_model/中读取对应的模型，给出预测结果
 6. 执行Query_function.py，得到需要查询的公司的相关信息，新添加了词云和情感分数部分
 
+
 # Model Running Process
 Demo logic: If you need to execute the demo, only steps 5 and 6 are required. 
 Note: It may take a while to implement step 5 and step 6, so please be patient.
